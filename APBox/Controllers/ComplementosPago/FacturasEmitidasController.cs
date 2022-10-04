@@ -12,6 +12,7 @@ using API.Operaciones.Facturacion;
 using Aplicacion.LogicaPrincipal.Facturas;
 using Aplicacion.LogicaPrincipal.GeneracionComplementosPagos;
 using MySql.Data.MySqlClient;
+using MySqlConnector;
 
 namespace APBox.Controllers.Catalogos
 {
@@ -333,7 +334,7 @@ namespace APBox.Controllers.Catalogos
                         "where dr.FacturaEmitidaId in (@Id); ";
 
             var resultados = _db.Database.SqlQuery<search_doc_rel_fac_emi>(query,
-                    new MySqlParameter { ParameterName = "@Id", MySqlDbType = MySqlDbType.String, Value = id }).FirstOrDefault();
+                    new MySqlConnector.MySqlParameter { ParameterName = "@Id", MySqlDbType = MySqlConnector.MySqlDbType.String, Value = id }).FirstOrDefault();
             
             return resultados;
         }
