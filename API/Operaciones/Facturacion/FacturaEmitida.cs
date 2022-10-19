@@ -1,5 +1,4 @@
 ﻿using API.Catalogos;
-using API.Enums;
 using API.Models.Facturas;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
@@ -34,13 +33,5 @@ namespace API.Operaciones.Facturacion
 
         [NotMapped]
         public int FacturaComplementoPagoId { get; set;}
-
-        public Status Status { get; set; }
-
-        [NotMapped]
-        public string FolioSustitucion { get; set; }
-
-        [NotMapped]
-        public string MotivoCancelacion { get; set; }
     }
 }

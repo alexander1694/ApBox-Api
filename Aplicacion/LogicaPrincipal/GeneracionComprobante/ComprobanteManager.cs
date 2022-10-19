@@ -395,8 +395,7 @@ namespace Aplicacion.LogicaPrincipal.GeneracionComprobante
                 Total = Decimal.ToDouble(comprobanteCfdi.Total),
                 Uuid = facturaDto.UUID,
                 ArchivoFisicoXml = utf8.GetBytes(facturaDto.XmlTimbrado),
-                CodigoQR = facturaDto.GenerarQrCode(),
-                Status = API.Enums.Status.Activo
+                CodigoQR = facturaDto.GenerarQrCode()
             };
             if (comprobanteCfdi.FormaPago != null)
             {

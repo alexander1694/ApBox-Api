@@ -527,8 +527,7 @@ namespace Aplicacion.LogicaPrincipal.GeneracionComprobante
                 Total = Decimal.ToDouble(comprobanteCfdi.Total),
                 Uuid = data.uuid,
                 ArchivoFisicoXml = xml,
-                CodigoQR = GeneraQR(comprobanteCfdi,data),
-                Status = API.Enums.Status.Activo
+                CodigoQR = GeneraQR(comprobanteCfdi,data)
             };
             if (comprobanteCfdi.FormaPago != null)
             {
