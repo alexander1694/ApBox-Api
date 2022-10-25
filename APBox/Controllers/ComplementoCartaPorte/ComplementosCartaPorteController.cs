@@ -67,6 +67,11 @@ namespace APBox.Controllers.ComplementosCartaPorte
             PopulaTiposDeComprobante();
             PopulaTransporte();
             PopulaEstatus();
+            ViewBag.Controller = "ComplementosCartaPorte";
+            ViewBag.Action = "Index";
+            ViewBag.ActionES = "Index";
+            ViewBag.Button = "Crear";
+            ViewBag.NameHere = "emision";
             if (actionName == "Filtrar")
             {
                 DateTime fechaI = complementosCPorteModel.FechaInicial;
@@ -184,8 +189,20 @@ namespace APBox.Controllers.ComplementosCartaPorte
                         GuiasIdentificacion = new GuiasIdentificacion()
                         {
                             PesoGuiaIdentificacion = 0
-                        }
+                        },
+                        Pedimentos = new Pedimentos()
                     },
+                    AutoTransporte =  new AutoTransporte() 
+                    { 
+                        IdentificacionVehicular = new IdentificacionVehicular(),
+                        Seguros = new Seguros(),
+                        Remolque = new Remolques()
+                    },
+                    TransporteMaritimo = new TransporteMaritimo()
+                    {
+                        ContenedorM = new ContenedorM()
+                    },
+                    TransporteAereo = new TransporteAereo(),
                     TransporteFerroviario = new TransporteFerroviario()
                     {
                         DerechosDePasos = new DerechosDePasos()
@@ -201,11 +218,8 @@ namespace APBox.Controllers.ComplementosCartaPorte
                                 PesoNetoMercancia = 0
                             }
                         }
-                    },
-                    TransporteMaritimo = new TransporteMaritimo()
-                    {
-                        ContenedorM = new ContenedorM() { }
                     }
+                    
 
                 },
 
@@ -809,6 +823,7 @@ namespace APBox.Controllers.ComplementosCartaPorte
                 Moneda = c_Moneda.MXN,
                 Cantidad = 0,
                 PesoEnKg = 0,
+                Pedimentos = new Pedimentos(),
                 DetalleMercancia = new DetalleMercancia()
                 {
                     NumPiezas = 0,
@@ -824,11 +839,82 @@ namespace APBox.Controllers.ComplementosCartaPorte
                 {
                     PesoGuiaIdentificacion = 0
                 }
+                
             };
-            
-            complementoCP.Ubicacion = new Ubicacion
-
+            if (complementoCP.ClaveTransporteId == "01")
             {
+                complementoCP.Mercancias.AutoTransporte.Remolque = new Remolques();
+                complementoCP.Mercancias.TransporteMaritimo = new TransporteMaritimo()
+                {
+                    ContenedorM = new ContenedorM()
+                };
+                complementoCP.Mercancias.TransporteAereo = new TransporteAereo();
+                complementoCP.Mercancias.TransporteFerroviario = new TransporteFerroviario() {
+                    DerechosDePasos = new DerechosDePasos(),
+                    Carro = new Carro() { 
+                        ContenedorC = new ContenedorC()
+                    },
+
+                };
+            }
+            if (complementoCP.ClaveTransporteId == "02") {
+                complementoCP.Mercancias.AutoTransporte = new AutoTransporte()
+                {
+                    Remolque = new Remolques()
+                };
+                complementoCP.Mercancias.TransporteMaritimo.ContenedorM = new ContenedorM();
+                complementoCP.Mercancias.TransporteAereo = new TransporteAereo();
+                complementoCP.Mercancias.TransporteFerroviario = new TransporteFerroviario()
+                {
+                    DerechosDePasos = new DerechosDePasos(),
+                    Carro = new Carro()
+                    {
+                        ContenedorC = new ContenedorC()
+                    },
+
+                };
+            }
+            if(complementoCP.ClaveTransporteId == "03")
+            {
+                complementoCP.Mercancias.AutoTransporte = new AutoTransporte()
+                {
+                    Remolque = new Remolques()
+                };
+                complementoCP.Mercancias.TransporteMaritimo = new TransporteMaritimo()
+                {
+                    ContenedorM = new ContenedorM()
+                };
+                complementoCP.Mercancias.TransporteFerroviario = new TransporteFerroviario()
+                {
+                    DerechosDePasos = new DerechosDePasos(),
+                    Carro = new Carro()
+                    {
+                        ContenedorC = new ContenedorC()
+                    },
+
+                };
+            }
+            if (complementoCP.ClaveTransporteId == "04")
+            {
+                complementoCP.Mercancias.AutoTransporte = new AutoTransporte()
+                {
+                    Remolque = new Remolques()
+                };
+                complementoCP.Mercancias.TransporteMaritimo = new TransporteMaritimo()
+                {
+                    ContenedorM = new ContenedorM()
+                };
+                complementoCP.Mercancias.TransporteAereo = new TransporteAereo();
+                complementoCP.Mercancias.TransporteFerroviario.DerechosDePasos = new DerechosDePasos();
+                complementoCP.Mercancias.TransporteFerroviario.Carro = new Carro()
+                {
+                    ContenedorC = new ContenedorC()
+                };
+            }
+                 
+             
+              complementoCP.Ubicacion = new Ubicacion
+               {
                 IDUbicacion = "OR" + randomNumber,
                 DistanciaRecorrida = 0,
                 TipoUbicacion = "Origen",
@@ -1000,7 +1086,10 @@ namespace APBox.Controllers.ComplementosCartaPorte
 
         public ActionResult Generar(int? id)
         {
-            
+            ViewBag.Controller = "ComplementosCartaPorte";
+            ViewBag.Action = "Generar";
+            ViewBag.ActionES = "Generar";
+            ViewBag.NameHere = "emision";
             if (id == null)
             {
                 return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
