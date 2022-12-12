@@ -24,6 +24,8 @@ using Aplicacion.LogicaPrincipal.Validacion;
 using API.Models.Dto;
 using Aplicacion.LogicaPrincipal.GeneraPDfCartaPorte;
 using API.Enums.CartaPorteEnums;
+using Aplicacion.LogicaPrincipal.Correos;
+using Aplicacion.LogicaPrincipal.Descargas;
 
 namespace APBox.Controllers.ComplementosPago
 {
@@ -40,11 +42,12 @@ namespace APBox.Controllers.ComplementosPago
         private readonly AcondicionarComplementosPagos _acondicionarComplementosPagos = new AcondicionarComplementosPagos();
         private readonly DecodificaFacturas _decodifica = new DecodificaFacturas();
         private readonly CreationFile _creationFile = new CreationFile();
-
+        private readonly EnviosEmails _email = new EnviosEmails();
+        private readonly DescargasManager _descargasManager = new DescargasManager();
         #endregion
 
         // GET: Facturas
-        
+
         public ActionResult Index()
         {
             PopulaEstatus();
@@ -147,7 +150,7 @@ namespace APBox.Controllers.ComplementosPago
                     Monto = 0.0,
                 }
             };
-
+           // _email.EnvioEmail("",0);
             ViewBag.Controller = "ComplementosPagos";
             ViewBag.Action = "Create";
             ViewBag.ActionES = "Crear";
@@ -300,32 +303,12 @@ namespace APBox.Controllers.ComplementosPago
             return View(complementoPago);
         }
 
-        // GET: ComplementosPago/Delete/5
-        [Authorize(Roles = "BORRADO")]
-        public ActionResult Delete(int? id)
-        {
-            if (id == null)
-            {
-                return new HttpStatusCodeResult(HttpStatusCode.BadRequest);
-            }
-            ComplementoPago complementoPago = _db.ComplementosPago.Find(id);
-            if (complementoPago == null)
-            {
-                return HttpNotFound();
-            }
-            PopulaClientes(complementoPago.ReceptorId);
-            PopulaBancos(ObtenerSucursal());
-            
-            PopulaTipoRelacion();
-            PopulaFormaPago();
-            PopulaExportacion();
-
-            return View(complementoPago);
-        }
+        
 
         // POST: ComplementosPago/Delete/5
-        [HttpPost, ActionName("Delete")]
-        [ValidateAntiForgeryToken]
+        //[HttpPost, ActionName("Delete")]
+        //[ValidateAntiForgeryToken]
+        [Authorize(Roles = "BORRADO")]
         public ActionResult DeleteConfirmed(int id)
         {
             ComplementoPago complementoPago = _db.ComplementosPago.Find(id);
@@ -385,7 +368,7 @@ namespace APBox.Controllers.ComplementosPago
                     cargasComplementosModel.Detalles = _cargarComplementosPagos.Importar(archivo, ObtenerSucursal(), cargasComplementosModel.Mes, cargasComplementosModel.Previsualizacion);
                     if (cargasComplementosModel.Previsualizacion)
                     {
-                        ModelState.AddModelError("", "Comando realizado con éxito");
+                        //ModelState.AddModelError("", "Comando realizado con éxito");
                     }
                     else
                     {
@@ -481,28 +464,11 @@ namespace APBox.Controllers.ComplementosPago
                 decimal totalTrasladosBaseIVA0 = 0;
                 decimal totalTrasladosImpuestoIVA0 = 0;
                 decimal totalTrasladosBaseIVAExento = 0;
-                double equivalencia = 1;
+                
                 if (complementoPago.DocumentosRelacionados != null)
                 {
                     foreach (var DRelacionado in complementoPago.DocumentosRelacionados)
                     {
-                        //calcula EquivalenciaDR
-                        /*if(DRelacionado.PagoId > 0){
-                            Pago p= _db.Pagos.Find(DRelacionado.PagoId);
-                            if(p != null) {
-                                if(p.Moneda == DRelacionado.Moneda) { equivalencia = 1; DRelacionado.EquivalenciaDR = equivalencia; }
-                                if(p.Moneda != DRelacionado.Moneda)
-                                {
-                                    //CALCULA EQUIVALENCIA 
-                                    equivalencia = ((double)(DRelacionado.ImportePagado / p.Monto));
-                                    //PARSEO A 6 DECIMALES
-                                    equivalencia = Math.Truncate(equivalencia * 1000000) / 1000000;
-                                    DRelacionado.EquivalenciaDR = equivalencia;
-                                }
-                            }
-                        
-                        }*/
-                        
                         
                             DRelacionado.FacturaEmitida = null;
                             DRelacionado.Pago = null;
@@ -749,7 +715,10 @@ namespace APBox.Controllers.ComplementosPago
 
         public ActionResult DescargarXml(int id)
         {
-            var pathCompleto = _pagosManager.GenerarXml(id);
+            var complementoPago = _db.ComplementosPago.Find(id);
+            var pathCompleto = _descargasManager.GeneraFilePathXml(complementoPago.FacturaEmitida.ArchivoFisicoXml, complementoPago.FacturaEmitida.Serie, complementoPago.FacturaEmitida.Folio);
+
+            //var pathCompleto = _pagosManager.GenerarXml(id);
             byte[] archivoFisico = System.IO.File.ReadAllBytes(pathCompleto);
             string contentType = MimeMapping.GetMimeMapping(pathCompleto);
 
@@ -759,6 +728,8 @@ namespace APBox.Controllers.ComplementosPago
                 Inline = false,
             };
             Response.AppendHeader("Content-Disposition", cd.ToString());
+            //Elimino el archivo Temp
+            System.IO.File.Delete(pathCompleto);
             return File(archivoFisico, contentType);
         }
         public ActionResult DescargarPDF(int id)
@@ -767,18 +738,24 @@ namespace APBox.Controllers.ComplementosPago
             ComprobanteCFDI33 oComprobante33 = new ComprobanteCFDI33();
             byte[] archivoFisico =  new byte[255];
             var complementoPago = _db.ComplementosPago.Find(id);
+            string tipoDocumento = null;
             //checar version del CFDI
             string CadenaXML = System.Text.Encoding.UTF8.GetString(complementoPago.FacturaEmitida.ArchivoFisicoXml);
             string versionCfdi = _decodifica.LeerValorXML(CadenaXML, "Version", "Comprobante");
             if(versionCfdi == "3.3") 
             {
-                oComprobante33 = _creationFile.DeserealizarXmlPagos10(id);
-                archivoFisico = _creationFile.GeneraPDFPagos33(oComprobante33, id);
-            
-            } else { 
-                oComprobante = _creationFile.DeserealizarXmlPagos20(id);
-                archivoFisico = _creationFile.GeneraPDFPagos(oComprobante, id);
-                
+                //oComprobante33 = _creationFile.DeserealizarXmlPagos10(id);
+                //archivoFisico = _creationFile.GeneraPDFPagos33(oComprobante33, id);
+                oComprobante33 = _decodifica.DeserealizarXML33(complementoPago.FacturaEmitida.ArchivoFisicoXml);
+                tipoDocumento = _decodifica.TipoDocumentoCfdi33(complementoPago.FacturaEmitida.ArchivoFisicoXml);
+                archivoFisico = _descargasManager.GeneraPDF33(oComprobante33, tipoDocumento, id, false);
+
+            } else {
+                //oComprobante = _creationFile.DeserealizarXmlPagos20(id);
+                //archivoFisico = _creationFile.GeneraPDFPagos(oComprobante, id);
+                oComprobante = _decodifica.DeserealizarXML40(complementoPago.FacturaEmitida.ArchivoFisicoXml);
+                tipoDocumento = _decodifica.TipoDocumentoCfdi40(complementoPago.FacturaEmitida.ArchivoFisicoXml);
+                archivoFisico = _descargasManager.GeneraPDF40(oComprobante, tipoDocumento, id, false);
             }
             
             
